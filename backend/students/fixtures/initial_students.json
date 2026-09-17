@@ -1,0 +1,58 @@
+[
+  {
+    "model": "students.student",
+    "pk": 2,
+    "fields": {
+      "student_id": "STU101",
+      "name": "Aisha Rahman",
+      "email": "aisha@college.edu",
+      "phone": "9876501234",
+      "department": "CSE",
+      "year": "2",
+      "city": "Coimbatore",
+      "created_at": "2026-09-16T19:34:14.916Z"
+    }
+  },
+  {
+    "model": "students.student",
+    "pk": 3,
+    "fields": {
+      "student_id": "STU102",
+      "name": "Karthik Rajan",
+      "email": "karthik@college.edu",
+      "phone": "9988776655",
+      "department": "ECE",
+      "year": "3",
+      "city": "Madurai",
+      "created_at": "2026-09-16T19:34:14.933Z"
+    }
+  },
+  {
+    "model": "students.student",
+    "pk": 4,
+    "fields": {
+      "student_id": "STU103",
+      "name": "Priya Sharma",
+      "email": "priya@college.edu",
+      "phone": "9123456789",
+      "department": "AIDS",
+      "year": "1",
+      "city": "Erode",
+      "created_at": "2026-09-16T19:34:49.074Z"
+    }
+  },
+  {
+    "model": "students.student",
+    "pk": 5,
+    "fields": {
+      "student_id": "STU004",
+      "name": "Mohammed Thoufi",
+      "email": "mohammedthoufiq037@gmail.com",
+      "phone": "8615154812",
+      "department": "AIDS",
+      "year": "2",
+      "city": "Karur",
+      "created_at": "2026-09-17T12:18:10.391Z"
+    }
+  }
+]

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management System | VSB Skill Vault</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-mark">SMS</div>
+                <div>
+                    <h1>CampusDesk</h1>
+                    <p>Student Management</p>
+                </div>
+            </div>
+            <nav class="side-nav">
+                <a class="active" href="#records">Student Records</a>
+                <a href="http://127.0.0.1:8000/api/students/" target="_blank" rel="noopener">REST API</a>
+                <a href="http://127.0.0.1:8000/admin/" target="_blank" rel="noopener">Django Admin</a>
+            </nav>
+            <div class="sidebar-note">
+                <strong>VSB Skill Vault</strong>
+                <span>Activity 3 · CRUD Web App</span>
+            </div>
+        </aside>
+
+        <main class="content">
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">Academic Records Portal</p>
+                    <h2>Student Management System</h2>
+                </div>
+                <div class="top-actions">
+                    <div class="search-box">
+                        <input id="searchInput" type="search" placeholder="Search by name, ID, email, city...">
+                    </div>
+                    <button id="refreshBtn" class="btn ghost" type="button">Refresh</button>
+                </div>
+            </header>
+
+            <section class="stats" id="stats">
+                <article>
+                    <span>Total Students</span>
+                    <strong id="statTotal">0</strong>
+                </article>
+                <article>
+                    <span>Departments</span>
+                    <strong id="statDept">0</strong>
+                </article>
+                <article>
+                    <span>Latest City</span>
+                    <strong id="statCity">—</strong>
+                </article>
+            </section>
+
+            <section class="workspace" id="records">
+                <div class="card form-card">
+                    <div class="card-head">
+                        <h3 id="formTitle">Add New Student</h3>
+                        <p id="formHint">Fill every field. The data is saved in SQLite through a REST API.</p>
+                    </div>
+                    <form id="studentForm" novalidate>
+                        <input type="hidden" id="recordId">
+                        <div class="grid">
+                            <label>
+                                Student ID
+                                <input id="student_id" name="student_id" maxlength="20" placeholder="STU001" required>
+                                <small class="field-error" data-for="student_id"></small>
+                            </label>
+                            <label>
+                                Full Name
+                                <input id="name" name="name" maxlength="100" placeholder="Mohammed Thoufiq" required>
+                                <small class="field-error" data-for="name"></small>
+                            </label>
+                            <label>
+                                Email
+                                <input id="email" name="email" type="email" placeholder="student@college.edu" required>
+                                <small class="field-error" data-for="email"></small>
+                            </label>
+                            <label>
+                                Phone
+                                <input id="phone" name="phone" maxlength="10" placeholder="9876543210" required>
+                                <small class="field-error" data-for="phone"></small>
+                            </label>
+                            <label>
+                                Department
+                                <select id="department" name="department" required>
+                                    <option value="">Select department</option>
+                                    <option value="CSE">CSE</option>
+                                    <option value="IT">IT</option>
+                                    <option value="ECE">ECE</option>
+                                    <option value="EEE">EEE</option>
+                                    <option value="MECH">MECH</option>
+                                    <option value="CIVIL">CIVIL</option>
+                                    <option value="AIDS">AIDS</option>
+                                    <option value="AIML">AIML</option>
+                                </select>
+                                <small class="field-error" data-for="department"></small>
+                            </label>
+                            <label>
+                                Year
+                                <select id="year" name="year" required>
+                                    <option value="">Select year</option>
+                                    <option value="1">1st Year</option>
+                                    <option value="2">2nd Year</option>
+                                    <option value="3">3rd Year</option>
+                                    <option value="4">4th Year</option>
+                                </select>
+                                <small class="field-error" data-for="year"></small>
+                            </label>
+                            <label class="full">
+                                City
+                                <input id="city" name="city" maxlength="80" placeholder="Coimbatore" required>
+                                <small class="field-error" data-for="city"></small>
+                            </label>
+                        </div>
+                        <div class="form-actions">
+                            <button id="submitBtn" class="btn primary" type="submit">Save Student</button>
+                            <button id="resetBtn" class="btn ghost" type="button">Clear Form</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card table-card">
+                    <div class="card-head row">
+                        <div>
+                            <h3>Student Records</h3>
+                            <p id="tableHint">Create, search, update and delete student data.</p>
+                        </div>
+                        <span id="resultCount" class="badge">0 records</span>
+                    </div>
+                    <div id="alertBox" class="alert" hidden></div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Student ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Dept</th>
+                                    <th>Year</th>
+                                    <th>City</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentTable"></tbody>
+                        </table>
+                    </div>
+                    <p id="emptyState" class="empty">No students found. Add the first record using the form.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="js/app.js"></script>
+</body>
+</html>

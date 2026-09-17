@@ -1,29 +1,27 @@
 @echo off
-title Student Management System
+title Student Management System (Full Stack)
 cd /d "%~dp0"
 
 echo =======================================================
-echo   Student Management System - Local Web Server
+echo   Student Management System - Full Stack Launcher
 echo =======================================================
 echo.
 
 if not exist ".venv\Scripts\python.exe" (
     echo [ERROR] Virtual environment not found at .venv\Scripts\python.exe
-    echo Please make sure the virtual environment exists.
     pause
     exit /b 1
 )
 
-echo [1/2] Opening browser at http://127.0.0.1:8000/ ...
-start http://127.0.0.1:8000/
+echo [1/2] Opening Frontend...
+start frontend\index.html
 
-echo [2/2] Starting Django server...
+echo [2/2] Starting Django REST Backend on http://127.0.0.1:8000/ ...
 echo.
-echo Server running at: http://127.0.0.1:8000/
-echo Press Ctrl + C in this window to stop the server.
+echo Press Ctrl + C to stop the backend server.
 echo =======================================================
 echo.
 
-.venv\Scripts\python.exe manage.py runserver 127.0.0.1:8000
+.venv\Scripts\python.exe backend\manage.py runserver 127.0.0.1:8000
 
 pause
