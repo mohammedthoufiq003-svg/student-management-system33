@@ -4,7 +4,7 @@ cd /d "%~dp0"
 
 echo ========================================================
 echo   Pushing to GitHub:
-echo   https://github.com/mohammedthoufiq003-svg/student-management-system
+echo   https://github.com/mohammedthoufiq003-svg/student-management-system33
 echo ========================================================
 echo.
 
