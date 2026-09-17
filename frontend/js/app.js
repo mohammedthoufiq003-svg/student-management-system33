@@ -1,8 +1,85 @@
-// Configurable API URL: if served from Django (port 8000), use relative path.
-// Otherwise (e.g. standalone file://, Live Server, GitHub Pages), connect to http://127.0.0.1:8000/api/students/
-const API_URL = (window.location.protocol.startsWith("http") && window.location.port === "8000")
+// Configurable API & Cloud Demo Mode Handler
+const isGitHubPages = window.location.hostname.includes("github.io");
+const isFileOrigin = window.location.protocol === "file:";
+const isDjangoOrigin = window.location.protocol.startsWith("http") && window.location.port === "8000";
+
+const API_URL = isDjangoOrigin
     ? "/api/students/"
     : "http://127.0.0.1:8000/api/students/";
+
+// Use browser LocalStorage fallback for GitHub Pages (avoids HTTPS mixed-content blocks)
+const STORAGE_KEY = "sms_students_cloud_v1";
+
+const DEFAULT_STUDENTS = [
+    {
+        id: 1,
+        student_id: "STU101",
+        name: "Mohammed Thoufiq",
+        email: "thoufiq@example.com",
+        phone: "9876543210",
+        department: "CSE",
+        year: "3",
+        city: "Coimbatore",
+        created_at: new Date(Date.now() - 3600000).toISOString()
+    },
+    {
+        id: 2,
+        student_id: "STU102",
+        name: "Aravind Kumar",
+        email: "aravind@example.com",
+        phone: "9845123456",
+        department: "AIDS",
+        year: "2",
+        city: "Chennai",
+        created_at: new Date(Date.now() - 86400000).toISOString()
+    },
+    {
+        id: 3,
+        student_id: "STU103",
+        name: "Priya Dharshini",
+        email: "priya@example.com",
+        phone: "9786123450",
+        department: "ECE",
+        year: "4",
+        city: "Madurai",
+        created_at: new Date(Date.now() - 172800000).toISOString()
+    },
+    {
+        id: 4,
+        student_id: "STU104",
+        name: "Karthik Raja",
+        email: "karthik@example.com",
+        phone: "9654123890",
+        department: "IT",
+        year: "1",
+        city: "Trichy",
+        created_at: new Date(Date.now() - 259200000).toISOString()
+    }
+];
+
+let useLocalStorage = isGitHubPages || isFileOrigin;
+
+// LocalStorage helpers
+function getLocalStudents() {
+    try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        if (!data) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_STUDENTS));
+            return [...DEFAULT_STUDENTS];
+        }
+        return JSON.parse(data);
+    } catch (e) {
+        return [...DEFAULT_STUDENTS];
+    }
+}
+
+function saveLocalStudents(list) {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    } catch (e) {
+        console.error("Could not write to localStorage", e);
+    }
+}
 
 const form = document.getElementById("studentForm");
 const tableBody = document.getElementById("studentTable");
@@ -75,7 +152,7 @@ function formatDate(iso) {
 
 function getFormData() {
     return {
-        student_id: document.getElementById("student_id").value.trim(),
+        student_id: document.getElementById("student_id").value.trim().toUpperCase(),
         name: document.getElementById("name").value.trim(),
         email: document.getElementById("email").value.trim(),
         phone: document.getElementById("phone").value.trim(),
@@ -116,7 +193,9 @@ function resetForm() {
     document.getElementById("recordId").value = "";
     submitBtn.textContent = "Save Student";
     formTitle.textContent = "Add New Student";
-    formHint.textContent = "Fill every field. The data is saved in SQLite through a REST API.";
+    formHint.textContent = useLocalStorage
+        ? "Fill every field. Data is saved interactively in browser storage."
+        : "Fill every field. The data is saved in SQLite through a REST API.";
     clearFieldErrors();
 }
 
@@ -134,8 +213,9 @@ async function apiRequest(url, options = {}) {
     try {
         response = await fetch(url, { ...options, headers });
     } catch (error) {
-        showAlert("Cannot connect to backend server at http://127.0.0.1:8000. Please start the backend.", "error");
-        throw new Error("Cannot reach the server. Make sure Django is running.");
+        // Switch to local storage fallback gracefully
+        useLocalStorage = true;
+        throw new Error("Cannot reach the server.");
     }
 
     let payload = null;
@@ -172,11 +252,11 @@ function renderTable(students) {
     students.forEach((student) => {
         const row = document.createElement("tr");
         row.innerHTML = `
-            <td>${student.student_id}</td>
+            <td><strong>${student.student_id}</strong></td>
             <td>${student.name}</td>
             <td>${student.email}</td>
             <td>${student.phone}</td>
-            <td>${student.department}</td>
+            <td><span class="dept-badge">${student.department}</span></td>
             <td>${yearLabel(student.year)}</td>
             <td>${student.city}</td>
             <td>${formatDate(student.created_at)}</td>
@@ -192,14 +272,32 @@ function renderTable(students) {
 }
 
 async function loadStudents(query = "") {
-    const url = query ? `${API_URL}?search=${encodeURIComponent(query)}` : API_URL;
+    const q = query.trim().toLowerCase();
+
+    if (useLocalStorage) {
+        let students = getLocalStudents();
+        if (q) {
+            students = students.filter((s) =>
+                s.name.toLowerCase().includes(q) ||
+                s.student_id.toLowerCase().includes(q) ||
+                s.email.toLowerCase().includes(q) ||
+                s.city.toLowerCase().includes(q) ||
+                s.department.toLowerCase().includes(q)
+            );
+        }
+        renderTable(students);
+        renderStats(students);
+        return;
+    }
+
+    const url = q ? `${API_URL}?search=${encodeURIComponent(q)}` : API_URL;
     try {
         const students = await apiRequest(url);
         renderTable(students);
         renderStats(students);
     } catch (error) {
-        renderTable([]);
-        renderStats([]);
+        useLocalStorage = true;
+        loadStudents(query);
     }
 }
 
@@ -214,7 +312,7 @@ function fillForm(student) {
     document.getElementById("city").value = student.city;
     submitBtn.textContent = "Update Student";
     formTitle.textContent = "Update Student";
-    formHint.textContent = `Editing ${student.student_id}. Save to send a PUT request.`;
+    formHint.textContent = `Editing ${student.student_id}. Save to apply changes.`;
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -232,6 +330,47 @@ form.addEventListener("submit", async (event) => {
 
     const recordId = document.getElementById("recordId").value;
     const isUpdate = Boolean(recordId);
+
+    if (useLocalStorage) {
+        const students = getLocalStudents();
+        const existingId = students.find((s) => s.student_id.toUpperCase() === data.student_id.toUpperCase() && (!isUpdate || String(s.id) !== String(recordId)));
+        if (existingId) {
+            setFieldError("student_id", "A student with this ID already exists.");
+            showAlert("Student ID already exists.", "error");
+            return;
+        }
+
+        const existingEmail = students.find((s) => s.email.toLowerCase() === data.email.toLowerCase() && (!isUpdate || String(s.id) !== String(recordId)));
+        if (existingEmail) {
+            setFieldError("email", "A student with this Email already exists.");
+            showAlert("Email already registered.", "error");
+            return;
+        }
+
+        if (isUpdate) {
+            const idx = students.findIndex((s) => String(s.id) === String(recordId));
+            if (idx !== -1) {
+                students[idx] = { ...students[idx], ...data };
+                saveLocalStudents(students);
+                showAlert("Student updated successfully.", "success");
+            }
+        } else {
+            const nextId = students.length ? Math.max(...students.map((s) => Number(s.id) || 0)) + 1 : 1;
+            const newStudent = {
+                id: nextId,
+                ...data,
+                created_at: new Date().toISOString()
+            };
+            students.unshift(newStudent);
+            saveLocalStudents(students);
+            showAlert("Student created successfully.", "success");
+        }
+
+        resetForm();
+        loadStudents(searchInput.value.trim());
+        return;
+    }
+
     const url = isUpdate ? `${API_URL}${recordId}/` : API_URL;
     const method = isUpdate ? "PUT" : "POST";
 
@@ -260,6 +399,12 @@ tableBody.addEventListener("click", async (event) => {
     const deleteId = event.target.getAttribute("data-delete");
 
     if (editId) {
+        if (useLocalStorage) {
+            const student = getLocalStudents().find((s) => String(s.id) === String(editId));
+            if (student) fillForm(student);
+            return;
+        }
+
         try {
             const student = await apiRequest(`${API_URL}${editId}/`);
             fillForm(student);
@@ -273,6 +418,18 @@ tableBody.addEventListener("click", async (event) => {
         if (!confirmed) {
             return;
         }
+
+        if (useLocalStorage) {
+            const updated = getLocalStudents().filter((s) => String(s.id) !== String(deleteId));
+            saveLocalStudents(updated);
+            showAlert("Student deleted successfully.", "success");
+            if (document.getElementById("recordId").value === deleteId) {
+                resetForm();
+            }
+            loadStudents(searchInput.value.trim());
+            return;
+        }
+
         try {
             await apiRequest(`${API_URL}${deleteId}/`, { method: "DELETE" });
             showAlert("Student deleted successfully.", "success");
@@ -297,4 +454,6 @@ searchInput.addEventListener("input", () => {
 resetBtn.addEventListener("click", resetForm);
 refreshBtn.addEventListener("click", () => loadStudents(searchInput.value.trim()));
 
+// Initialize form hint and data
+resetForm();
 loadStudents();
